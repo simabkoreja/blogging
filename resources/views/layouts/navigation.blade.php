@@ -16,9 +16,16 @@
                         {{ __('Dashboard') }}
                     </x-nav-link>
                 </div>
+
+                <div class="hidden space-x-8 sm:-my-px sm:ml-10 sm:flex">
+                    <x-nav-link :href="route('blogs.index')" :active="request()->routeIs('blog*')">
+                        {{ __('Blogs') }}
+                    </x-nav-link>
+                </div>
             </div>
 
             <!-- Settings Dropdown -->
+            @if (auth()->check())
             <div class="hidden sm:flex sm:items-center sm:ml-6">
                 <x-dropdown align="right" width="48">
                     <x-slot name="trigger">
@@ -47,6 +54,7 @@
                     </x-slot>
                 </x-dropdown>
             </div>
+            @endif
 
             <!-- Hamburger -->
             <div class="-mr-2 flex items-center sm:hidden">
