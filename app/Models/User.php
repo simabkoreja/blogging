@@ -12,6 +12,7 @@ use App\Models\Blog;
 
 class User extends Authenticatable
 {
+    use \Backpack\CRUD\app\Models\Traits\CrudTrait;
     use HasApiTokens, HasFactory, Notifiable, SoftDeletes;
 
     /**

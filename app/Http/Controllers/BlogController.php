@@ -5,14 +5,12 @@ namespace App\Http\Controllers;
 use App\Models\Blog;
 use Illuminate\Http\Request;
 use App\Http\Requests\BlogRequest;
+use App\Models\Comment;
+use App\Models\User;
 
 class BlogController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
+
     public function index()
     {
         $index['blogs'] = Blog::with('comments')->latest()->paginate(20);
@@ -20,23 +18,12 @@ class BlogController extends Controller
         return view('blogs.index', $index);        
     }
 
-    /**
-     * Show the form for creating a new resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
     public function create()
     {
         $index['title'] = 'Create Blog';
         return view('blogs.create', $index);
     }
 
-    /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
     public function store(BlogRequest $request)
     {
         $blog = Blog::create([
@@ -56,23 +43,11 @@ class BlogController extends Controller
         return redirect(route('blogs.index'))->with('status', 'Blog Created!');
     }
 
-    /**
-     * Display the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function show($id)
+    public function show(Blog $blog)
     {
         //
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
     public function edit(Blog $blog)
     {
         $index['title'] = 'Edit Blog';
@@ -80,13 +55,6 @@ class BlogController extends Controller
         return view('blogs.edit', $index);
     }
 
-    /**
-     * Update the specified resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
     public function update(BlogRequest $request, Blog $blog)
     {
         $blog->update([
@@ -106,15 +74,59 @@ class BlogController extends Controller
         return redirect(route('blogs.index'))->with('status', 'Blog Updated!');
     }
 
-    /**
-     * Remove the specified resource from storage.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
     public function destroy(Blog $blog)
     {
         $blog->delete();
         return redirect(route('blogs.index'))->with('status', 'Blog Deleted!');
+    }
+
+    public function comment_store(Request $request) 
+    {
+        $request->validate([
+            'comment' => 'required',
+            'blog_id' => 'required|integer'
+        ]);
+
+        $comment = Comment::create([
+            'comment' => $request->comment,
+            'blog_id' => $request->blog_id,
+            'user_id' => auth()->id()
+        ]);
+
+        return redirect(route('blogs.index'))->with('status', 'Comment Added!');
+    }
+
+    public function comment_update(Request $request) 
+    {
+        $request->validateWithBag('commentUpdation',[
+            'comment' => 'required',
+            'comment_id' => 'required',
+        ]);
+        
+        $comment = Comment::findOrFail($request->comment_id);
+        if($comment->user_id != auth()->id() && auth()->user()->role != User::ROLE_ADMIN){
+            abort('401');
+        }
+        $comment->update([
+            'comment' => $request->comment,
+        ]);
+
+        return redirect()->back()->with('status', 'Comment Updated!');
+    }
+
+    public function comment_delete(Request $request){
+
+        $request->validate([
+            'comment_id' => 'required',
+        ]);
+
+        $comment = Comment::findOrFail($request->comment_id);
+        if($comment->user_id != auth()->id() && auth()->user()->role != User::ROLE_ADMIN){
+            abort('401');
+        }
+        if(!is_null($comment)){
+            $comment->delete();
+        }
+        return redirect(route('blogs.index'))->with('status', 'Comment Deleted!');
     }
 }

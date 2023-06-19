@@ -3,28 +3,35 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ProfileUpdateRequest;
+use App\Models\Blog;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\View\View;
+use App\Models\User;
 
 class ProfileController extends Controller
 {
     /**
      * Display the user's profile form.
      */
-    public function edit(Request $request): View
+    public function edit(User $profile): View
     {
+        if($profile->id != auth()->id()){
+            abort('401');
+        }
+        $blogs = Blog::where('user_id', auth()->id())->latest()->paginate(20);
         return view('profile.edit', [
-            'user' => $request->user(),
+            'user' => $profile,
+            'blogs' => $blogs
         ]);
     }
 
     /**
      * Update the user's profile information.
      */
-    public function update(ProfileUpdateRequest $request): RedirectResponse
+    public function update(ProfileUpdateRequest $request, User $profile): RedirectResponse
     {
         $request->user()->fill($request->validated());
 
@@ -34,7 +41,7 @@ class ProfileController extends Controller
 
         $request->user()->save();
 
-        return Redirect::route('profile.edit')->with('status', 'profile-updated');
+        return Redirect::route('profile.edit', $request->user()->id)->with('status', 'profile-updated');
     }
 
     /**
